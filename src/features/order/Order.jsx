@@ -85,7 +85,7 @@ function Order() {
         </p>
       </div>
       <ul className="dive-stone-200 divide-y border-t border-b">
-        {cart.map((item) => (
+        {cart.map((item, index) => (
           <OrderItem item={item} key={item.id} />
         ))}
       </ul>

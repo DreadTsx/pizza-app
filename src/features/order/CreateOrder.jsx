@@ -124,7 +124,7 @@ export async function action({ request }) {
   if (Object.keys(errors).length > 0) return errors;
 
   const newOrder = await createOrder(order);
-  // console.log(order);
+  // console.log(newOrder);
 
   return redirect(`/order/${newOrder.id}`);
 }
