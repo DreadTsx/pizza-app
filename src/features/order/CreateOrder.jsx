@@ -1,9 +1,9 @@
 import { Form, redirect, useActionData, useNavigation } from "react-router";
 import { createOrder } from "../../services/apiRestaurant";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import Button from "../../ui/Button";
 import { clearCart, getCart, getTotalCartPrice } from "../cart/cartSlice";
-import { getUsername } from "../user/userSlice";
+import { fetchAddress, getUsername } from "../user/userSlice";
 import { formatCurrency } from "../../utils/helpers";
 import { useState } from "react";
 import store from "../../store";
@@ -14,32 +14,15 @@ const isValidPhone = (str) =>
     str,
   );
 
-// const fakeCart = [
-//   {
-//     pizzaId: 12,
-//     name: "Mediterranean",
-//     quantity: 2,
-//     unitPrice: 16,
-//     totalPrice: 32,
-//   },
-//   {
-//     pizzaId: 6,
-//     name: "Vegetale",
-//     quantity: 1,
-//     unitPrice: 13,
-//     totalPrice: 13,
-//   },
-//   {
-//     pizzaId: 11,
-//     name: "Spinach and Mushroom",
-//     quantity: 1,
-//     unitPrice: 15,
-//     totalPrice: 15,
-//   },
-// ];
-
 function CreateOrder() {
   const [withPriority, setWithPriority] = useState(false);
+  const {
+    status: addressStatus,
+    address,
+    position,
+    error: addressError,
+  } = useSelector((state) => state.user);
+  const isLoadingAddress = addressStatus === "loading";
   const navigation = useNavigation();
   const isSubmitting = navigation.state === "submitting";
   const formErrors = useActionData();
@@ -48,6 +31,7 @@ function CreateOrder() {
   const totalCartPrice = useSelector(getTotalCartPrice);
   const priorityPrice = withPriority ? totalCartPrice * 0.2 : 0;
   const totalPrice = totalCartPrice + priorityPrice;
+  const dispatch = useDispatch();
 
   return (
     <div className="px-4 py-6">
@@ -77,17 +61,38 @@ function CreateOrder() {
           </div>
         </div>
 
-        <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-center">
+        <div className="relative mb-5 flex flex-col gap-2 sm:flex-row sm:items-center">
           <label className="sm:basis-40">Address</label>
           <div className="grow">
             <input
-              className="input w-full"
+              className="input w-full py-[7px]"
               type="text"
               name="address"
               required
+              defaultValue={address}
             />
           </div>
+          {!position.latitude && !position.longitude && (
+            <span className="absolute top-[33px] right-[0px] z-50 sm:top-0">
+              <Button
+                type="small"
+                disabled={isLoadingAddress}
+                onClick={(e) => {
+                  e.preventDefault;
+                  dispatch(fetchAddress());
+                }}
+              >
+                Get Position
+              </Button>
+            </span>
+          )}
         </div>
+
+        {addressStatus === "error" && (
+          <p className="text-md mt-2 mb-4 rounded-md bg-red-100 p-2 text-center text-red-700">
+            {addressError}
+          </p>
+        )}
 
         <div className="mb-12 flex items-center gap-5">
           <input
@@ -103,9 +108,18 @@ function CreateOrder() {
 
         <div>
           <input type="hidden" name="cart" value={JSON.stringify(cart)} />
-          <Button disabled={isSubmitting} type="primary">
+          <input
+            type="hidden"
+            name="position"
+            value={
+              position.latitude && position.longitude
+                ? `${position.latitude}, ${position.longitude}`
+                : ""
+            }
+          />
+          <Button disabled={isSubmitting || isLoadingAddress} type="primary">
             {isSubmitting
-              ? "Placing Order"
+              ? "Placing Order..."
               : `Order Now From ${formatCurrency(totalPrice)} `}
           </Button>
         </div>
@@ -124,6 +138,7 @@ export async function action({ request }) {
     cart: JSON.parse(data.cart),
     priority: data.priority === "true",
   };
+  // console.log(order);
   const errors = {};
   if (!isValidPhone(data.phone))
     errors.phone =
@@ -131,10 +146,11 @@ export async function action({ request }) {
   if (Object.keys(errors).length > 0) return errors;
 
   const newOrder = await createOrder(order);
-  // console.log(newOrder);
+
   store.dispatch(clearCart());
   //
   return redirect(`/order/${newOrder.id}`);
+  // return null;
 }
 
 export default CreateOrder;

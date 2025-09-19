@@ -2,6 +2,7 @@ import { formatCurrency } from "../../utils/helpers";
 
 function OrderItem({ item, isLoadingIngredients, ingredients }) {
   const { quantity, name, totalPrice } = item;
+  // console.log(ingredients);
 
   return (
     <li className="py-3">
@@ -11,6 +12,9 @@ function OrderItem({ item, isLoadingIngredients, ingredients }) {
         </p>
         <p className="font-bold">{formatCurrency(totalPrice)}</p>
       </div>
+      <p className="text-sm text-stone-500 capitalize italic">
+        {isLoadingIngredients ? "loading..." : ingredients.join(", ")}
+      </p>
     </li>
   );
 }
