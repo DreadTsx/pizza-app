@@ -7,6 +7,7 @@ import CreateOrder, {
   action as CreateOrderAction,
 } from "./features/order/CreateOrder";
 import Order, { loader as OrderLoader } from "./features/order/Order";
+import { action as updateOrderAction } from "./features/order/UpdateOrder";
 import Loader from "./ui/Loader";
 import Error from "./ui/Error";
 
@@ -41,6 +42,7 @@ function App() {
           element: <Order />,
           loader: OrderLoader,
           hydrateFallbackElement: <Loader />,
+          action: updateOrderAction,
         },
       ],
     },
